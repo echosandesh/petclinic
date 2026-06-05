@@ -19,6 +19,8 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.samples.petclinic.vet.VetRepository;
+import org.springframework.samples.petclinic.vet.WaitingCounterService;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -44,8 +46,14 @@ class VisitController {
 
 	private final OwnerRepository owners;
 
-	public VisitController(OwnerRepository owners) {
+	private final VetRepository vets;
+
+	private final WaitingCounterService waitingCounterService;
+
+	public VisitController(OwnerRepository owners, VetRepository vets, WaitingCounterService waitingCounterService) {
 		this.owners = owners;
+		this.vets = vets;
+		this.waitingCounterService = waitingCounterService;
 	}
 
 	@InitBinder
@@ -107,8 +115,20 @@ class VisitController {
 
 		owner.addVisit(petId, visit);
 		this.owners.save(owner);
+		if (visit.getId() != null) {
+			var vetIds = this.vets.findAll().stream().map(v -> v.getId()).toList();
+			this.waitingCounterService.checkIn(visit.getId(), this.waitingCounterService.pickVetId(vetIds));
+		}
 		redirectAttributes.addFlashAttribute("message", "Your visit has been booked");
 		return "redirect:/owners/{ownerId}";
+	}
+
+	@PostMapping("/owners/{ownerId}/pets/{petId}/visits/{visitId}/complete")
+	public String completeVisit(@PathVariable int ownerId, @PathVariable int visitId,
+			RedirectAttributes redirectAttributes) {
+		this.waitingCounterService.checkOut(visitId);
+		redirectAttributes.addFlashAttribute("message", "Visit completed");
+		return "redirect:/owners/" + ownerId;
 	}
 
 }

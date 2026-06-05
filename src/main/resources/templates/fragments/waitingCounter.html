@@ -1,0 +1,27 @@
+<div th:fragment="waitingCounter" id="waiting-counter" class="alert alert-info">
+  <strong th:text="#{waiting}">Waiting</strong> <span id="waiting-counts" th:text="#{waitingLoading}">Loading...</span>
+  <script>
+    (function () {
+      var intervalMs = 5000;
+      function refresh() {
+        fetch('/api/waiting')
+          .then(function (response) { return response.json(); })
+          .then(function (counts) {
+            var entries = Object.keys(counts);
+            if (entries.length === 0) {
+              document.getElementById('waiting-counts').textContent = 'None';
+              return;
+            }
+            document.getElementById('waiting-counts').textContent = entries
+              .map(function (vetId) { return 'Vet ' + vetId + ': ' + counts[vetId]; })
+              .join(', ');
+          })
+          .catch(function () {
+            document.getElementById('waiting-counts').textContent = 'Unavailable';
+          });
+      }
+      refresh();
+      setInterval(refresh, intervalMs);
+    })();
+  </script>
+</div>
