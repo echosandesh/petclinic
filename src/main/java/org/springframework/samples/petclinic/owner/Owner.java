@@ -66,7 +66,7 @@ public class Owner extends Person {
 	@OrderBy("name")
 	private final List<Pet> pets = new ArrayList<>();
 
-/*Get address*/
+	/* Get address */
 	public String getAddress() {
 		return this.address;
 	}
